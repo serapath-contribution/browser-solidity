@@ -480,3 +480,15 @@ input[type="file"] {
     z-index:20;
     background-color:#F4B9B7;
 } 
+
+.ace_gutter-cell.ace_breakpoint{ 
+   background-color: #C6CFF7;
+}
+
+.breakpointUntouched { 
+   background-color: #C6CFF7;
+}
+
+.breakpointTouched { 
+   background-color:#F4B9B7;
+}
