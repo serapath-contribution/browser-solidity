@@ -16,19 +16,55 @@ function Debugger (id, editor, compiler, executionContextEvent, switchToFile, of
   this.editor = editor
   this.switchToFile = switchToFile
   this.compiler = compiler
+  this.markers = {}
+  this.breakPointManager = new remix.code.BreakpointManager(this.debugger)
+  this.debugger.setBreakpointManager(this.breakPointManager)
+  this.breakPointManager.event.register('breakpointHit', (sourceLocation) => {
+    this.editor.setBreakpoint(this.touchedBreakpoint, 'breakpointUntouched')
+    var lineColumnPos = this.offsetToLineColumnConverter.offsetToLineColumn(sourceLocation, sourceLocation.file, this.editor, this.compiler.lastCompilationResult.data)
+    this.editor.setBreakpoint(lineColumnPos.start.line, 'breakpointTouched')
+    var self = this
+    setTimeout(function () {
+      self.editor.setBreakpoint(lineColumnPos.start.line, 'breakpointUntouched')
+    }, 5000)
+  })
+
+  function convertSourceLocation (self, fileName, row) {
+    var source = {}
+    for (let file in self.compiler.lastCompilationResult.data.sourceList) {
+      if (self.compiler.lastCompilationResult.data.sourceList[file] === fileName) {
+        source.file = file
+        break
+      }
+    }
+    console.log(self.offsetToLineColumnConverter.lineBreakPositionsByContent[source.file])
+    source.start = self.offsetToLineColumnConverter.lineBreakPositionsByContent[source.file][row > 0 ? row - 1 : 0]
+    source.end = self.offsetToLineColumnConverter.lineBreakPositionsByContent[source.file][row]
+    source.row = row
+    return source
+  }
+
+  editor.event.register('breakpointCleared', (fileName, row) => {
+    this.breakPointManager.remove(convertSourceLocation(this, fileName, row))
+  })
+
+  editor.event.register('breakpointAdded', (fileName, row) => {
+    this.breakPointManager.add(convertSourceLocation(this, fileName, row))
+  })
 
   var self = this
   executionContextEvent.register('contextChanged', this, function (context) {
     self.switchProvider(context)
   })
 
-  this.debugger.event.register('traceUnloaded', this, function () {
-    self.removeCurrentMarker()
+  this.debugger.event.register('traceUnloaded', () => {
+    this.removeMarkers()
   })
 
   // unload if a file has changed (but not if tabs were switched)
   editor.event.register('contentChanged', function () {
     self.debugger.unLoad()
+    self.removeMarkers()
   })
 
   // register selected code item, highlight the corresponding source location
@@ -37,9 +73,9 @@ function Debugger (id, editor, compiler, executionContextEvent, switchToFile, of
       this.debugger.callTree.sourceLocationTracker.getSourceLocationFromInstructionIndex(address, index, self.compiler.lastCompilationResult.data.contracts, function (error, rawLocation) {
         if (!error) {
           var lineColumnPos = self.offsetToLineColumnConverter.offsetToLineColumn(rawLocation, rawLocation.file, self.editor, self.compiler.lastCompilationResult.data)
-          self.highlight(lineColumnPos, rawLocation)
+          self.highlight(lineColumnPos, rawLocation, 'highlightcode')
         } else {
-          self.removeCurrentMarker()
+          self.removeMarker('highlightcode')
         }
       })
     }
@@ -61,21 +97,44 @@ Debugger.prototype.debug = function (txHash) {
   })
 }
 
+Debugger.prototype.switchFile = function (rawLocation) {
+  var name = this.editor.getCacheFile() // current opened tab
+  var source = this.compiler.lastCompilationResult.data.sourceList[rawLocation.file] // auto switch to that tab
+  if (name !== source) {
+    this.switchToFile(source) // command the app to swicth to the next file
+  }
+}
+
 /**
  * highlight the given @arg lineColumnPos
  *
  * @param {Object} lineColumnPos - position of the source code to hightlight {start: {line, column}, end: {line, column}}
  * @param {Object} rawLocation - raw position of the source code to hightlight {start, length, file, jump}
  */
-Debugger.prototype.highlight = function (lineColumnPos, rawLocation) {
-  var name = this.editor.getCacheFile() // current opened tab
-  var source = this.compiler.lastCompilationResult.data.sourceList[rawLocation.file] // auto switch to that tab
-  this.removeCurrentMarker()
-  if (name !== source) {
-    this.switchToFile(source) // command the app to swicth to the next file
+Debugger.prototype.highlight = function (lineColumnPos, rawLocation, cssCode) {
+  this.removeMarker(cssCode)
+  this.switchFile(rawLocation)
+  var range = new Range(lineColumnPos.start.line, lineColumnPos.start.column, lineColumnPos.end.line, lineColumnPos.end.column)
+  this.markers[cssCode] = this.editor.addMarker(range, cssCode)
+}
+
+/**
+ * unhighlight highlighted statements
+ */
+Debugger.prototype.removeMarkers = function () {
+  for (var k in this.markers) {
+    this.removeMarker(k)
   }
-  this.currentRange = new Range(lineColumnPos.start.line, lineColumnPos.start.column, lineColumnPos.end.line, lineColumnPos.end.column)
-  this.currentMarker = this.editor.addMarker(this.currentRange, 'highlightcode')
+}
+
+/**
+ * unhighlight the current highlighted statement
+ */
+Debugger.prototype.removeMarker = function (key) {
+  if (this.markers[key]) {
+    this.editor.removeMarker(this.markers[key])
+    this.markers[key] = null
+  }
 }
 
 /**
@@ -102,16 +161,6 @@ Debugger.prototype.switchProvider = function (type) {
  */
 Debugger.prototype.web3 = function (type) {
   return this.debugger.web3()
-}
-
-/**
- * unhighlight the current highlighted statement
- */
-Debugger.prototype.removeCurrentMarker = function () {
-  if (this.currentMarker) {
-    this.editor.removeMarker(this.currentMarker)
-    this.currentMarker = null
-  }
 }
 
 module.exports = Debugger
