@@ -23,7 +23,6 @@ function Debugger (id, editor, compiler, executionContextEvent, switchToFile, of
 
   this.debugger.setBreakpointManager(this.breakPointManager)
   this.breakPointManager.event.register('breakpointHit', (sourceLocation) => {
-    this.editor.setBreakpoint(this.touchedBreakpoint, 'breakpointUntouched')
     var lineColumnPos = this.offsetToLineColumnConverter.offsetToLineColumn(sourceLocation, sourceLocation.file, this.editor, this.compiler.lastCompilationResult.data)
     this.editor.setBreakpoint(lineColumnPos.start.line, 'breakpointTouched')
     var self = this
