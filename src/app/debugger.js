@@ -40,9 +40,6 @@ function Debugger (id, editor, compiler, executionContextEvent, switchToFile, of
         break
       }
     }
-    console.log(self.offsetToLineColumnConverter.lineBreakPositionsByContent[source.file])
-    source.start = self.offsetToLineColumnConverter.lineBreakPositionsByContent[source.file][row > 0 ? row - 1 : 0]
-    source.end = self.offsetToLineColumnConverter.lineBreakPositionsByContent[source.file][row]
     source.row = row
     return source
   }
