@@ -23,12 +23,6 @@ function Editor (doNotLoadStorage, storage) {
     if (target.className.indexOf('ace_gutter-cell') === -1) {
       return
     }
-    if (!editor.isFocused()) {
-      return
-    }
-    if (e.clientX > 25 + target.getBoundingClientRect().left) {
-      return
-    }
     var row = e.getDocumentPosition().row
     var brkpoints = e.editor.session.getBreakpoints()
     for (var k in brkpoints) {
@@ -39,7 +33,7 @@ function Editor (doNotLoadStorage, storage) {
         return
       }
     }
-    self.setBreakpoint(row, 'breakpointUntouched')
+    self.setBreakpoint(row)
     event.trigger('breakpointAdded', [self.getCacheFile(), row])
     e.stop()
   })

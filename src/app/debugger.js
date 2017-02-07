@@ -22,14 +22,7 @@ function Debugger (id, editor, compiler, executionContextEvent, switchToFile, of
   })
 
   this.debugger.setBreakpointManager(this.breakPointManager)
-  this.breakPointManager.event.register('breakpointHit', (sourceLocation) => {
-    var lineColumnPos = this.offsetToLineColumnConverter.offsetToLineColumn(sourceLocation, sourceLocation.file, this.editor, this.compiler.lastCompilationResult.data)
-    this.editor.setBreakpoint(lineColumnPos.start.line, 'breakpointTouched')
-    var self = this
-    setTimeout(function () {
-      self.editor.setBreakpoint(lineColumnPos.start.line, 'breakpointUntouched')
-    }, 5000)
-  })
+  this.breakPointManager.event.register('breakpointHit', (sourceLocation) => {})
 
   function convertSourceLocation (self, fileName, row) {
     var source = {}
@@ -44,11 +37,15 @@ function Debugger (id, editor, compiler, executionContextEvent, switchToFile, of
   }
 
   editor.event.register('breakpointCleared', (fileName, row) => {
-    this.breakPointManager.remove(convertSourceLocation(this, fileName, row))
+    if (self.compiler.lastCompilationResult.data) {
+      this.breakPointManager.remove(convertSourceLocation(this, fileName, row))
+    }
   })
 
   editor.event.register('breakpointAdded', (fileName, row) => {
-    this.breakPointManager.add(convertSourceLocation(this, fileName, row))
+    if (self.compiler.lastCompilationResult.data) {
+      this.breakPointManager.add(convertSourceLocation(this, fileName, row))
+    }
   })
 
   var self = this

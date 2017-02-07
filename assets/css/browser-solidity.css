@@ -482,13 +482,5 @@ input[type="file"] {
 } 
 
 .ace_gutter-cell.ace_breakpoint{ 
-   background-color: #C6CFF7;
-}
-
-.breakpointUntouched { 
-   background-color: #C6CFF7;
-}
-
-.breakpointTouched { 
-   background-color:#F4B9B7;
+   background-color: #F2423C;
 }
