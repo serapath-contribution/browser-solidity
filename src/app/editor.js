@@ -24,8 +24,8 @@ function Editor (doNotLoadStorage, storage) {
       return
     }
     var row = e.getDocumentPosition().row
-    var brkpoints = e.editor.session.getBreakpoints()
-    for (var k in brkpoints) {
+    var breakpoints = e.editor.session.getBreakpoints()
+    for (var k in breakpoints) {
       if (k === row.toString()) {
         event.trigger('breakpointCleared', [self.getCacheFile(), row])
         e.editor.session.clearBreakpoint(row)
