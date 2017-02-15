@@ -2,7 +2,7 @@
 
 function Storage () {
   this.exists = function (name) {
-    return !!this.get(name)
+    return this.get(name) !== undefined
   }
 
   this.get = function (name) {
