@@ -1,6 +1,11 @@
 'use strict'
 
-var TRAVIS_JOB_NUMBER = process.env.TRAVIS_JOB_NUMBER
+var TEST
+if (process.env.TRAVIS_JOB_NUMBER === 'test' || process.env.TRAVIS_JOB_NUMBER === undefined) {
+  TEST = 'test'
+} else {
+  TEST = 'browsersoliditytests' + process.env.TRAVIS_JOB_NUMBER
+}
 
 module.exports = {
   'src_folders': ['test-browser/tests'],
@@ -16,8 +21,8 @@ module.exports = {
       'selenium_host': 'ondemand.saucelabs.com',
       'selenium_port': 80,
       'silent': true,
-      'username': 'chriseth',
-      'access_key': 'b781828a-9e9c-43d8-89d4-2fbb879595ca',
+      'username': process.env.SAUCE_USER,
+      'access_key': process.env.SAUCE_GUID,
       'use_ssl': false,
       'globals': {
         'waitForConditionTimeout': 10000,
@@ -31,8 +36,8 @@ module.exports = {
         'browserName': 'firefox',
         'javascriptEnabled': true,
         'acceptSslCerts': true,
-        'build': 'build-' + TRAVIS_JOB_NUMBER,
-        'tunnel-identifier': 'browsersolidity_tests_' + TRAVIS_JOB_NUMBER
+        'build': 'build-' + process.env.TRAVIS_JOB_NUMBER,
+        'tunnel-identifier': TEST
       }
     },
 
@@ -41,8 +46,8 @@ module.exports = {
         'browserName': 'chrome',
         'javascriptEnabled': true,
         'acceptSslCerts': true,
-        'build': 'build-' + TRAVIS_JOB_NUMBER,
-        'tunnel-identifier': 'browsersolidity_tests_' + TRAVIS_JOB_NUMBER
+        'build': 'build-' + process.env.TRAVIS_JOB_NUMBER,
+        'tunnel-identifier': TEST
       }
     },
 
@@ -53,8 +58,8 @@ module.exports = {
         'platform': 'OS X 10.10',
         'version': '8.0',
         'acceptSslCerts': true,
-        'build': 'build-' + TRAVIS_JOB_NUMBER,
-        'tunnel-identifier': 'browsersolidity_tests_' + TRAVIS_JOB_NUMBER
+        'build': 'build-' + process.env.TRAVIS_JOB_NUMBER,
+        'tunnel-identifier': TEST
       }
     },
 
@@ -65,8 +70,8 @@ module.exports = {
         'acceptSslCerts': true,
         'platform': 'WIN8.1',
         'version': '11',
-        'build': 'build-' + TRAVIS_JOB_NUMBER,
-        'tunnel-identifier': 'browsersolidity_tests_' + TRAVIS_JOB_NUMBER
+        'build': 'build-' + process.env.TRAVIS_JOB_NUMBER,
+        'tunnel-identifier': TEST
       }
     },
 

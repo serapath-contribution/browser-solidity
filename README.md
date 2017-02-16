@@ -55,6 +55,17 @@ Then you will need to either:
 	- Run: `sc -u <USERNAME> -k <ACCESS_KEY>` (see `.travis.yml` for values)
 	- Run: `npm run browser-test-sc`
 
+## Saucelabs Testing `(currently not working - work in progress)`
+*(tested with node v6.2.2+ )*
+
+once: `npm run downloadsolc` `npm run make-mock-compiler`
+
+then:
+
+	npm run serve
+	npm run sauce
+	npm run browser-test-remote-parallel
+
 ## Usage as a Chrome Extension
 
 If you would like to use this as a Chrome extension, you must either build it first or pull from the `gh-pages` branch, both described above.
