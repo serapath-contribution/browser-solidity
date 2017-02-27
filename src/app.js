@@ -2,6 +2,8 @@
 'use strict'
 
 var $ = require('jquery')
+var yo = require('yo-yo')
+var csjs = require('csjs-inject')
 var base64 = require('js-base64').Base64
 var swarmgw = require('swarmgw')
 
@@ -25,6 +27,9 @@ var StaticAnalysis = require('./app/staticanalysis/staticAnalysisView')
 var OffsetToLineColumnConverter = require('./lib/offsetToLineColumnConverter')
 
 var examples = require('./app/example-contracts')
+
+// components
+var fileExplorer = require('_file-explorer')
 
 // The event listener needs to be registered as early as possible, because the
 // parent will send the message upon the "load" event.
@@ -156,10 +161,50 @@ var run = function () {
   chromeCloudSync()
 
   // ----------------- editor ----------------------
-
   var editor = new Editor()
 
-  // ----------------- tabbed menu -------------------
+  // -------------- file explorer ------------------
+  // TEST SETUP
+  files.set('b/b/c', '')
+  files.set('a/b/c', false)
+  files.set('a/b/x', true)
+  // CUSTOM STYLING
+  var css = csjs`
+    .folder {
+      background: yellow;
+    }
+    .file {
+      background: lime;
+    }
+  `
+  // @NOTE HTML#ID creates window['<ID name>'] element as a global
+  var treeview = window.treeview
+  treeview.appendChild(fileExplorer({
+    files: files,
+    editor: editor,
+    // getMeta (keyPath, name, item) {
+    //   return { foo: 'bar'+name }
+    // },
+    formatNode (data) {
+      return data.meta ? yo`<label class=${css.folder}>${data.key}/</label>`
+        : yo`<label class=${css.file}>${data.key}</label>`
+    },
+    classes: {/*
+      possible selectors:
+        .data
+        .caret
+        .node
+        .isClosed
+        .isOpened
+        .ul
+        .li
+        .caretBase
+        .caretDown
+        .caretRight
+    */}
+  }))
+
+  // ---------------- tabbed menu ------------------
   $('#options li').click(function (ev) {
     var $el = $(this)
     selectTab($el)

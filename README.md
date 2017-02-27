@@ -31,6 +31,12 @@ npm run onchange # (optional regression standard lint testing)
 ```
 Then open your `text editor` and start developing
 
+
+## Developing
+Just run `npm start` and open `127.0.0.1:8080` in your browser.
+If you edit any files, your browser live reloads automagically :-)
+
+
 ### Troubleshooting building
 
 Here are some things to consider if you have trouble building the package.
