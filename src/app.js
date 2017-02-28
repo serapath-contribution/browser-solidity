@@ -165,28 +165,24 @@ var run = function () {
 
   // -------------- fileExplorer ------------------
   // TEST SETUP
-  files.set('folder M/folder N/file_o.sol', '')
-  files.set('folder A/b1.sol', '')
-  files.set('folder A/b2.sol', '')
-  files.set('folder A/folder B1/c1.sol', false)
-  files.set('folder A/folder B2/c2.sol', false)
-  files.set('folder A/folder B2/c3.sol', false)
-  files.set('folder A/folder B2/folder C/d1.sol', false)
-  files.set('folder A/folder B3/c3.sol', false)
-  files.set('folder X/folder Y1/z1.sol', true)
-  files.set('folder X/folder Y2/z2.sol', true)
+  files.set('test/client/credit.sol', '')
+  files.set('src/voting.sol', '')
+  files.set('src/leasing.sol', '')
+  files.set('src/gmbh/contract.sol', false)
+  files.set('src/gmbh/test.sol', false)
+  files.set('src/gmbh/company.sol', false)
+  files.set('src/gmbh/node_modules/ballot.sol', false)
+  files.set('src/ug/finance.sol', false)
+  files.set('app/solidity/mode.sol', true)
+  files.set('app/ethereum/constitution.sol', true)
   // CUSTOM STYLING
   var css = csjs`
     .treeview {
-      width: 30%;
+      margin-top: 4px;
+      width: 20%;
     }
-    .folder {
-      padding: 2px;
-      font-size: 16px;
-    }
-    .file {
-      padding: 2px;
-      font-size: 16px;
+    .folder, .file {
+      font-size: 14px;
     }
     .hasFocus {
       background-color: #F4F6FF;
@@ -202,8 +198,8 @@ var run = function () {
     //   return { foo: 'bar'+name }
     // },
     formatNode (data) {
-      return data.meta ? yo`<label class=${css.folder}><i class="fa fa-folder-o" aria-hidden="true"></i> ${data.key} </label>`
-        : yo`<label class=${css.file}><i class="fa fa-file-text-o" aria-hidden="true"></i> ${data.key}</label>`
+      return data.meta ? yo`<label class=${css.folder}>${data.key} </label>`
+        : yo`<label class=${css.file}>${data.key}</label>`
     },
     classes: {
       hasFocus: css.hasFocus
