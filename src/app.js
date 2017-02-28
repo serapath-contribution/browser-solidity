@@ -163,22 +163,38 @@ var run = function () {
   // ----------------- editor ----------------------
   var editor = new Editor()
 
-  // -------------- file explorer ------------------
+  // -------------- fileExplorer ------------------
   // TEST SETUP
-  files.set('b/b/c', '')
-  files.set('a/b/c', false)
-  files.set('a/b/x', true)
+  files.set('folder M/folder N/file_o.sol', '')
+  files.set('folder A/b1.sol', '')
+  files.set('folder A/b2.sol', '')
+  files.set('folder A/folder B1/c1.sol', false)
+  files.set('folder A/folder B2/c2.sol', false)
+  files.set('folder A/folder B2/c3.sol', false)
+  files.set('folder A/folder B2/folder C/d1.sol', false)
+  files.set('folder A/folder B3/c3.sol', false)
+  files.set('folder X/folder Y1/z1.sol', true)
+  files.set('folder X/folder Y2/z2.sol', true)
   // CUSTOM STYLING
   var css = csjs`
+    .treeview {
+      width: 30%;
+    }
     .folder {
-      background: yellow;
+      padding: 2px;
+      font-size: 16px;
     }
     .file {
-      background: lime;
+      padding: 2px;
+      font-size: 16px;
+    }
+    .hasFocus {
+      background-color: #F4F6FF;
     }
   `
   // @NOTE HTML#ID creates window['<ID name>'] element as a global
   var treeview = window.treeview
+  treeview.className = css.treeview
   treeview.appendChild(fileExplorer({
     files: files,
     editor: editor,
@@ -186,10 +202,12 @@ var run = function () {
     //   return { foo: 'bar'+name }
     // },
     formatNode (data) {
-      return data.meta ? yo`<label class=${css.folder}>${data.key}/</label>`
-        : yo`<label class=${css.file}>${data.key}</label>`
+      return data.meta ? yo`<label class=${css.folder}><i class="fa fa-folder-o" aria-hidden="true"></i> ${data.key} </label>`
+        : yo`<label class=${css.file}><i class="fa fa-file-text-o" aria-hidden="true"></i> ${data.key}</label>`
     },
-    classes: {/*
+    classes: {
+      hasFocus: css.hasFocus
+      /*
       possible selectors:
         .data
         .caret
