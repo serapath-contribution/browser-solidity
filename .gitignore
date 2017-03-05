@@ -5,5 +5,3 @@ reports
 soljson.js
 npm-debug.log*
 babelify-src
-.env.sauce.local
-!src/node_modules
