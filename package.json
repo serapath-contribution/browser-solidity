@@ -4,24 +4,24 @@
   "version": "0.0.0",
   "description": "Minimalistic browser-based Solidity IDE",
   "scripts": {
-    "prepublish": "npm-run-all -ls downloadsolc make-mock-compiler build",
-    "build": "mkdirp build; browserify src/index.js -t yo-yoify -t [ babelify --presets [ es2015 ] ] | babili > build/app.js",
-    "start": "npm-run-all -lpr serve watch onchange",
-    "test": "standard; babel src --out-dir babelify-src; node test/index.js",
-    "selenium": "selenium-standalone start",
     "browser-test": "nightwatch --config nightwatch.js --env local",
     "browser-test-remote-chrome": "nightwatch --config nightwatch.js --env chrome",
     "browser-test-remote-firefox": "nightwatch --config nightwatch.js --env default",
     "browser-test-remote-ie": "nightwatch --config nightwatch.js --env ie",
     "browser-test-remote-safari": "nightwatch --config nightwatch.js --env safari",
     "browser-test-remote-parallel": "nightwatch --config nightwatch.js --env safari,ie,default,chrome",
-    "serve": "http-server .",
-    "watch": "mkdirp build; watchify src/index.js -p [ browserify-livereload --host 127.0.0.1 --port 1337 ] -t [ babelify --presets [ es2015 ] --no-sourceMaps ] -dv -o build/app.js",
-    "onchange": "onchange build/app.js -- npm run lint",
+    "build": "mkdirp build; browserify src/index.js -t yo-yoify -t [ babelify --presets [ es2015 ] ] | babili > build/app.js",
     "csslint": "csslint --ignore=order-alphabetical --errors='errors,duplicate-properties,empty-rules' --exclude-list='assets/css/font-awesome.min.css' assets/css/",
-    "lint": "standard | notify-error",
     "downloadsolc": "rm -f soljson.js; wget https://ethereum.github.io/solc-bin/soljson.js",
-    "make-mock-compiler": "node ci/makeMockCompiler.js"
+    "lint": "standard | notify-error",
+    "make-mock-compiler": "node ci/makeMockCompiler.js",
+    "onchange": "onchange build/app.js -- npm run lint",
+    "prepublish": "npm-run-all -ls downloadsolc make-mock-compiler build",
+    "selenium": "selenium-standalone start",
+    "serve": "http-server .",
+    "start": "npm-run-all -lpr serve watch onchange",
+    "test": "standard; babel src --out-dir babelify-src; node test/index.js",
+    "watch": "mkdirp build; watchify src/index.js -p [ browserify-livereload --host 127.0.0.1 --port 1337 ] -t [ babelify --presets [ es2015 ] --no-sourceMaps ] -dv -o build/app.js"
   },
   "devDependencies": {
     "async": "^2.1.2",
@@ -32,8 +32,9 @@
     "brace": "^0.8.0",
     "browserify": "^13.0.0",
     "browserify-livereload": "^1.0.9",
+    "csjs-inject": "^1.0.1",
     "csslint": "^1.0.2",
-    "ethereum-remix": "https://github.com/ethereum/remix",
+    "ethereum-remix": "git+https://github.com/ethereum/remix.git",
     "ethereumjs-abi": "^0.6.4",
     "ethereumjs-block": "^1.2.2",
     "ethereumjs-tx": "^1.1.1",
@@ -41,6 +42,7 @@
     "ethereumjs-vm": "^2.0.1",
     "fast-async": "^6.1.2",
     "http-server": "0.9.0",
+    "jquery": "^3.1.1",
     "js-base64": "^2.1.9",
     "mkdirp": "^0.5.1",
     "nightwatch": "^0.9.3",
@@ -54,6 +56,7 @@
     "watchify": "^3.9.0",
     "web3": "^0.18.0",
     "webworkify": "^1.2.1",
+    "yo-yo": "^1.4.0",
     "yo-yoify": "^3.3.0"
   },
   "repository": {
@@ -78,12 +81,5 @@
       "soljson.js"
     ],
     "parser": "babel-eslint"
-  },
-  "dependencies": {
-    "csjs-inject": "^1.0.1",
-    "ethereum-remix": "github:ethereum/remix",
-    "jquery": "^2.2.0",
-    "setval": "^5.1.2",
-    "yo-yo": "^1.2.2"
   }
 }

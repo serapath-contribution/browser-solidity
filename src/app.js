@@ -23,11 +23,9 @@ var FormalVerification = require('./app/formalVerification')
 var EventManager = require('./lib/eventManager')
 var StaticAnalysis = require('./app/staticanalysis/staticAnalysisView')
 var OffsetToLineColumnConverter = require('./lib/offsetToLineColumnConverter')
+var FileExplorer = require('./app/file-explorer')
 
 var examples = require('./app/example-contracts')
-
-// components
-var fileExplorer = require('_file-explorer')
 
 // The event listener needs to be registered as early as possible, because the
 // parent will send the message upon the "load" event.
@@ -160,20 +158,55 @@ var run = function () {
 
   // ----------------- editor ----------------------
   var editor = new Editor()
-  // -------------- fileExplorer ------------------
-  // @NOTE HTML#ID creates window['<ID name>'] element as a global
-  // var api = fileExplorer(window.treeview, files, editor)
-  fileExplorer(window.treeview, files, editor)
+
+  // -------------- FileExplorer -------------------
+  var sources = {
+    'test/client/credit.sol': '',
+    'src/voting.sol': '',
+    'src/leasing.sol': '',
+    'src/gmbh/contract.sol': false,
+    'src/gmbh/test.sol': false,
+    'src/gmbh/company.sol': false,
+    'src/gmbh/node_modules/ballot.sol': false,
+    'src/ug/finance.sol': false,
+    'app/solidity/mode.sol': true,
+    'app/ethereum/constitution.sol': true
+  }
+  Object.keys(sources).forEach(function (key) { files.set(key, sources[key]) })
+
+  var fileExplorerAPI = {
+    filesList: function () { return Object.keys(files.list()) },
+    filesRemove: function (path) {
+      [...window.files.querySelectorAll('.file .name')].forEach(function (span) {
+        if (span.innerText === path) {
+          var li = span.parentElement
+          li.parentElement.removeChild(li) // delete tab
+        }
+      })
+      return files.remove(path)
+    },
+    filesIsReadOnly: function (path) { return files.isReadOnly(path) },
+    filesRename: function (oldPath, newPath) { return files.rename(oldPath, newPath) }
+  }
+  var api = new FileExplorer('#treeview', fileExplorerAPI, files.event)
+  api.on('focus', function (path) {
+    [...window.files.querySelectorAll('.file .name')].forEach(function (span) {
+      if (span.innerText === path) switchToFile(path) // @TODO: scroll into view
+    })
+  })
+  files.event.register('fileRenamed', function (oldName, newName) {
+    [...window.files.querySelectorAll('.file .name')].forEach(function (span) {
+      if (span.innerText === oldName) span.innerText = newName
+    })
+  })
+
   // ---------------- tabbed menu ------------------
   $('#options li').click(function (ev) {
     var $el = $(this)
     selectTab($el)
   })
 
-  /* -------------------------------------------------
-                  Toggle left hand panel
-  ------------------------------------------------- */
-  // @NOTE HTML#ID creates window['<ID name>'] element as a global
+  // -----------Toggle left hand panel--------------
   var toggleLHS = window.toggleLHP
   var toggleIcon = document.querySelector('.toggleLHP i')
   var newFile = document.querySelector('.newFile')
