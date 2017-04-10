@@ -10,7 +10,6 @@ SAUCECONNECT_JOBIDENTIFIER="browsersolidity_tests_${TRAVIS_JOB_NUMBER}"
 SAUCECONNECT_READYFILE="sc.ready"
 TEST_EXITCODE=0
 
-node ci/makeMockCompiler.js
 npm run serve &
 
 wget "$SAUCECONNECT_URL"
@@ -20,7 +19,8 @@ while [ ! -f "$SAUCECONNECT_READYFILE" ]; do
   sleep .5
 done
 
-npm run browser-test-remote-parallel || TEST_EXITCODE=1
+# npm run browser-test-remote-parallel || TEST_EXITCODE=1
+npm run nightwatch_remote_parallel || TEST_EXITCODE=1
 
 node ci/sauceDisconnect.js "$SAUCECONNECT_USERNAME" "$SAUCECONNECT_ACCESSKEY" "$SAUCECONNECT_JOBIDENTIFIER"
 

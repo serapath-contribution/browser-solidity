@@ -1,6 +1,7 @@
 /* global alert, confirm, prompt, FileReader, Option, Worker, chrome */
 'use strict'
 
+var async = require('async')
 var $ = require('jquery')
 var base64 = require('js-base64').Base64
 var swarmgw = require('swarmgw')
@@ -110,7 +111,9 @@ var run = function () {
 
   // insert ballot contract if there are no files available
   if (!loadingFromGist && Object.keys(files.list()).length === 0) {
-    files.set(examples.ballot.name, examples.ballot.content)
+    if (!files.set(examples.ballot.name, examples.ballot.content)) {
+      alert('Failed to store example contract in browser. Remix will not work properly. Please ensure Remix has access to LocalStorage. Safari in Private mode is known not to work.')
+    }
   }
 
   // ----------------- Chrome cloud storage sync --------------------
@@ -196,6 +199,8 @@ var run = function () {
         if (response.html_url && confirm('Created a gist at ' + response.html_url + ' Would you like to open it in a new window?')) {
           window.open(response.html_url, '_blank')
         }
+      }).fail(function (xhr, text, err) {
+        alert('Failed to create gist: ' + (err || 'Unknown transport error'))
       })
     }
   })
@@ -646,6 +651,69 @@ var run = function () {
     startdebugging(txResult.transactionHash)
   })
 
+  function swarmVerifiedPublish (content, expectedHash, cb) {
+    swarmgw.put(content, function (err, ret) {
+      if (err) {
+        cb(err)
+      } else if (ret !== expectedHash) {
+        cb('Hash mismatch')
+      } else {
+        cb()
+      }
+    })
+  }
+
+  function publishOnSwarm (contract, cb) {
+    // gather list of files to publish
+    var sources = []
+
+    sources.push({
+      content: contract.metadata,
+      hash: contract.metadataHash
+    })
+
+    var metadata
+    try {
+      metadata = JSON.parse(contract.metadata)
+    } catch (e) {
+      return cb(e)
+    }
+
+    if (metadata === undefined) {
+      return cb('No metadata')
+    }
+
+    Object.keys(metadata.sources).forEach(function (fileName) {
+      // find hash
+      var hash
+      try {
+        hash = metadata.sources[fileName].urls[0].match('bzzr://(.+)')[1]
+      } catch (e) {
+        return cb('Metadata inconsistency')
+      }
+
+      sources.push({
+        content: files.get(fileName),
+        hash: hash
+      })
+    })
+
+    // publish the list of sources in order, fail if any failed
+    async.eachSeries(sources, function (item, cb) {
+      swarmVerifiedPublish(item.content, item.hash, cb)
+    }, cb)
+  }
+
+  udapp.event.register('publishContract', this, function (contract) {
+    publishOnSwarm(contract, function (err) {
+      if (err) {
+        alert('Failed to publish metadata: ' + err)
+      } else {
+        alert('Metadata published successfully')
+      }
+    })
+  })
+
   // ----------------- Renderer -----------------
   var transactionContextAPI = {
     getAddress: (cb) => {
@@ -790,7 +858,7 @@ var run = function () {
   })
 
   compiler.event.register('loadingCompiler', this, function (url, usingWorker) {
-    setVersionText(usingWorker ? '(loading using worker)' : '(loading)')
+    setVersionText(usingWorker ? '(loading using worker)' : '( Loading... Please, wait a moment. )')
   })
 
   compiler.event.register('compilerLoaded', this, function (version) {
@@ -872,7 +940,7 @@ var run = function () {
     loadVersion($('#versionSelector').val())
   })
 
-  var header = new Option('Select new compiler version to load')
+  var header = new Option('Click to select new compiler version')
   header.disabled = true
   header.selected = true
   $('#versionSelector').append(header)

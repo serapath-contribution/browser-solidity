@@ -16,6 +16,10 @@ function Renderer (appAPI, formalVerificationEvent, compilerEvent) {
     $('#output').empty()
     if (success) {
       self.contracts(data, source)
+      $('#header #menu .envView').css('color', '')
+    } else {
+      // envView is the `Contract` tab, as a refactor the entire envView should have his own module
+      $('#header #menu .envView').css('color', '#FF8B8B')
     }
 
     // NOTE: still need to display as there might be warnings
@@ -72,21 +76,23 @@ Renderer.prototype.error = function (message, container, options) {
 }
 
 Renderer.prototype.contracts = function (data, source) {
+  var retrieveMetadataHash = function (bytecode) {
+    var match = /a165627a7a72305820([0-9a-f]{64})0029$/.exec(bytecode)
+    if (match) {
+      return match[1]
+    }
+  }
+
   var udappContracts = []
   for (var contractName in data.contracts) {
     var contract = data.contracts[contractName]
     udappContracts.push({
       name: contractName,
       interface: contract['interface'],
-      bytecode: contract.bytecode
+      bytecode: contract.bytecode,
+      metadata: contract.metadata,
+      metadataHash: contract.bytecode && retrieveMetadataHash(contract.bytecode)
     })
-  }
-
-  var retrieveMetadataHash = function (bytecode) {
-    var match = /a165627a7a72305820([0-9a-f]{64})0029$/.exec(bytecode)
-    if (match) {
-      return match[1]
-    }
   }
 
   var tableRowItems = function (first, second, cls) {
