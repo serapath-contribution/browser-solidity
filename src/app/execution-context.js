@@ -1,7 +1,6 @@
 /* global confirm, prompt */
 'use strict'
 
-var $ = require('jquery')
 var Web3 = require('web3')
 var EventManager = require('../lib/eventManager')
 var EthJSVM = require('ethereumjs-vm')
@@ -29,7 +28,7 @@ class StateManagerCommonStorageDump extends StateManager {
   }
 
   putContractStorage (address, key, value, cb) {
-    this.keyHashes[ethUtil.sha3(key)] = ethUtil.bufferToHex(key)
+    this.keyHashes[ethUtil.sha3(key).toString('hex')] = ethUtil.bufferToHex(key)
     super.putContractStorage(address, key, value, cb)
   }
 
@@ -42,7 +41,10 @@ class StateManagerCommonStorageDump extends StateManager {
       var storage = {}
       var stream = trie.createReadStream()
       stream.on('data', function (val) {
-        storage[self.keyHashes[val.key]] = val.value.toString('hex')
+        storage['0x' + val.key.toString('hex')] = {
+          key: self.keyHashes[val.key.toString('hex')],
+          value: '0x' + val.value.toString('hex')
+        }
       })
       stream.on('end', function () {
         cb(storage)
@@ -87,32 +89,24 @@ function ExecutionContext () {
     return vm
   }
 
-  this.setEndPointUrl = function (url) {
-    $web3endpoint.val(url)
-  }
-
-  this.setContext = function (context) {
+  this.setContext = function (context, endPointUrl) {
     executionContext = context
-    executionContextChange(context)
+    executionContextChange(context, endPointUrl)
   }
 
-  var $web3endpoint = $('#web3Endpoint')
-
-  if (web3.providers && web3.currentProvider instanceof web3.providers.IpcProvider) {
-    $web3endpoint.val('ipc')
-  }
-
-  function executionContextChange (context) {
-    if (context === 'web3' && !confirm('Are you sure you want to connect to a local ethereum node?')) {
+  function executionContextChange (context, endPointUrl) {
+    if (context === 'web3' && !confirm('Are you sure you want to connect to an ethereum node?')) {
       return false
     } else if (context === 'injected' && injectedProvider === undefined) {
       return false
     } else {
       if (context === 'web3') {
         executionContext = context
-        var endpoint = prompt('Please type Web3 Provider Endpoint', 'http://localhost:8545')
-        setProviderFromEndpoint(endpoint)
-        self.event.trigger('web3EndpointChanged')
+        if (!endPointUrl) {
+          endPointUrl = 'http://localhost:8545'
+        }
+        endPointUrl = prompt('Web3 Provider Endpoint', endPointUrl)
+        setProviderFromEndpoint(endPointUrl)
         self.event.trigger('contextChanged', ['web3'])
       } else if (context === 'injected') {
         executionContext = context
@@ -135,13 +129,14 @@ function ExecutionContext () {
     } else {
       web3.setProvider(new web3.providers.HttpProvider(endpoint))
     }
+    self.event.trigger('web3EndpointChanged')
   }
 
   /* ---------------------------------------------------------------------------
   DROPDOWN
   --------------------------------------------------------------------------- */
 
-  var selectExEnv = document.querySelector('#selectExEnv')
+  var selectExEnv = document.querySelector('#selectExEnvOptions')
   selectExEnv.addEventListener('change', function (event) {
     if (!executionContextChange(selectExEnv.options[selectExEnv.selectedIndex].value)) {
       selectExEnv.value = executionContext

@@ -29,6 +29,29 @@ var FilePanel = require('./app/file-panel')
 
 var examples = require('./app/example-contracts')
 
+var contractTab = require('./app/contract-tab.js')
+var settingsTab = require('./app/settings-tab.js')
+var analysisTab = require('./app/analysis-tab.js')
+var debuggerTab = require('./app/debugger-tab.js')
+var filesTab = require('./app/files-tab.js')
+/* ----------------------------------------------
+        TABS - Righthand pannel
+---------------------------------------------- */
+var contractView = contractTab()
+document.querySelector('#optionViews').appendChild(contractView)
+
+var settingsView = settingsTab()
+document.querySelector('#optionViews').appendChild(settingsView)
+
+var analysisView = analysisTab()
+document.querySelector('#optionViews').appendChild(analysisView)
+
+var debuggerView = debuggerTab()
+document.querySelector('#optionViews').appendChild(debuggerView)
+
+var filesView = filesTab()
+document.querySelector('#optionViews').appendChild(filesView)
+
 // The event listener needs to be registered as early as possible, because the
 // parent will send the message upon the "load" event.
 var filesToLoad = null
@@ -161,21 +184,6 @@ var run = function () {
   var editor = new Editor(document.getElementById('input'))
 
   // ---------------- FilePanel --------------------
-  /****************************************************************************
-  var sources = {
-    'test/client/credit.sol': '',
-    'src/voting.sol': '',
-    'src/leasing.sol': '',
-    'src/gmbh/contract.sol': false,
-    'src/gmbh/test.sol': false,
-    'src/gmbh/company.sol': false,
-    'src/gmbh/node_modules/ballot.sol': false,
-    'src/ug/finance.sol': false,
-    'app/solidity/mode.sol': true,
-    'app/ethereum/constitution.sol': true
-  }
-  Object.keys(sources).forEach(function (key) { files.set(key, sources[key]) })
-  /****************************************************************************/
   var css = csjs`
     .filepanel    {
       display     : flex;
@@ -187,7 +195,7 @@ var run = function () {
   var FilePanelAPI = {
     createName: createNonClashingName,
     switchToFile: switchToFile,
-    ui: ui.event
+    event: this.event
   }
   var el = new FilePanel(FilePanelAPI, files)
   filepanel.appendChild(el)
@@ -215,7 +223,7 @@ var run = function () {
   })
   api.register('focus', function (path) {
     [...window.files.querySelectorAll('.file .name')].forEach(function (span) {
-      if (span.innerText === path) switchToFile(path) // @TODO: scroll into view
+      if (span.innerText === path) switchToFile(path)
     })
   })
   files.event.register('fileRenamed', function (oldName, newName) {
@@ -224,7 +232,15 @@ var run = function () {
     })
   })
   files.event.register('fileRemoved', function (path) {
-    if (path === ui.get('currentFile')) ui.set('currentFile', '')
+    if (path === ui.get('currentFile')) {
+      ui.set('currentFile', '')
+      switchToNextFile()
+    }
+    editor.discard(path)
+    refreshTabs()
+  })
+  files.event.register('fileAdded', function (path) {
+    refreshTabs()
   })
   // ------------------ gist publish --------------
 
@@ -342,10 +358,6 @@ var run = function () {
     if (confirm('Are you sure you want to remove: ' + name + ' from local storage?')) {
       if (!files.remove(name)) {
         alert('Error while removing file')
-      } else {
-        ui.set('currentFile', '')
-        switchToNextFile()
-        editor.discard(name)
       }
     }
     return false
@@ -363,6 +375,7 @@ var run = function () {
     } else {
       editor.open(file, files.get(file))
     }
+    self.event.trigger('currentFileChanged', [file])
   }
 
   function switchToNextFile () {
@@ -380,7 +393,6 @@ var run = function () {
     var fileNames = Object.keys(files.list())
 
     $filesEl.find('.file').remove()
-    $('#output').empty()
 
     for (var f in fileNames) {
       var name = fileNames[f]
@@ -395,10 +407,6 @@ var run = function () {
     }
     $('#input').toggle(currentFileOpen)
     $('#output').toggle(currentFileOpen)
-
-    $filesEl.animate({ left: Math.max((0 - activeFilePos() + (FILE_SCROLL_DELTA / 2)), 0) + 'px' }, 'slow', function () {
-      reAdjust()
-    })
   }
 
   var $scrollerRight = $('.scroller-right')
@@ -419,12 +427,6 @@ var run = function () {
 
   function getLeftPosi () {
     return $filesEl.position().left
-  }
-
-  function activeFilePos () {
-    var el = $filesEl.find('.active')
-    var l = el.position().left
-    return l
   }
 
   function reAdjust () {
@@ -800,7 +802,8 @@ var run = function () {
     }
   }
   var staticanalysis = new StaticAnalysis(staticAnalysisAPI, compiler.event)
-  $('#staticanalysisView').append(staticanalysis.render())
+  var node = document.getElementById('staticanalysisView')
+  node.insertBefore(staticanalysis.render(), node.childNodes[0])
 
   // ----------------- autoCompile -----------------
   var autoCompile = document.querySelector('#autoCompile').checked
@@ -815,6 +818,8 @@ var run = function () {
   })
 
   function runCompiler () {
+    if (transactionDebugger.isActive) return
+
     editorSyncFile()
     var currentFile = ui.get('currentFile')
     if (currentFile) {
@@ -889,7 +894,7 @@ var run = function () {
   })
 
   compiler.event.register('loadingCompiler', this, function (url, usingWorker) {
-    setVersionText(usingWorker ? '(loading using worker)' : '( Loading... Please, wait a moment. )')
+    setVersionText(usingWorker ? '(loading using worker)' : ' Loading... please, wait a moment! ')
   })
 
   compiler.event.register('compilerLoaded', this, function (version) {
@@ -897,12 +902,10 @@ var run = function () {
     setVersionText(version)
     runCompiler()
 
-    if (queryParams.get().endpointurl) {
-      executionContext.setEndPointUrl(queryParams.get().endpointurl)
-    }
     if (queryParams.get().context) {
-      executionContext.setContext(queryParams.get().context)
+      executionContext.setContext(queryParams.get().context, queryParams.get().endpointurl)
     }
+
     if (queryParams.get().debugtx) {
       startdebugging(queryParams.get().debugtx)
     }
@@ -971,7 +974,7 @@ var run = function () {
     loadVersion($('#versionSelector').val())
   })
 
-  var header = new Option('Click to select new compiler version')
+  var header = new Option('Select new compiler version')
   header.disabled = true
   header.selected = true
   $('#versionSelector').append(header)
